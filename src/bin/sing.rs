@@ -43,36 +43,38 @@ async fn main(_spawner: Spawner) {
 
     let peripherals = embassy_rp::init(Default::default());
 
-    let mut config: ConfigPwm = Default::default();
-    config.top = 0x9088; // in HEX, equals 37000 in decimal
-    config.compare_b = config.top;
-
-    let mut pwm = Pwm::new_output_b(peripherals.PWM_SLICE1, peripherals.PIN_3, config.clone());
-
     // TODO: Configure the PWM pin.
     let mut buzzer_cfg: ConfigPwm = Default::default();
-    buzzer_cfg.top = 0x9088;
     buzzer_cfg.divider = PWM_DIV.to_fixed();
-    buzzer_cfg.compare_a = buzzer_cfg.top / 2;
     let mut buzzer = Pwm::new_output_a(peripherals.PWM_SLICE6, peripherals.PIN_28, buzzer_cfg.clone());
-    buzzer.set_config(&buzzer_cfg);
 
-    for (note, length) in OCTAVE {
-        // TODO: Compute the note's duration based on
-        // the length variable.
-        let duration = ();
+    loop {
+        for (note, mut length) in OCTAVE {
+            // TODO: Compute the note's duration based on
+            // the length variable.
+            let duration = WHOLE_NOTE / length.unsigned_abs() as u64;
 
-        match note {
-            Some(note) => {
-                // TODO: Configure the `top` and `compare_X` registers
-                // based on the note's type and change the PWM's config.
-                // Keep in mind that we are aiming for a 50% duty cycle.
-                // "Play" the note for 90% of the duration, then insert
-                // a 10% pause before playing the next note.
-            }
-            None => {
-                // TODO: Just wait the whole duration.
-            }
-        };
+            match note {
+                Some(note) => {
+                    // TODO: Configure the `top` and `compare_X` registers
+                    // based on the note's type and change the PWM's config.
+                    // Keep in mind that we are aiming for a 50% duty cycle.
+                    // "Play" the note for 90% of the duration, then insert
+                    // a 10% pause before playing the next note.
+                    let top = CLOCK_FREQ / (note as u64 * PWM_DIV) - 1;
+                    buzzer_cfg.top = top as u16;
+                    buzzer_cfg.compare_a = buzzer_cfg.top / 2;
+                    buzzer.set_config(&buzzer_cfg); // start buzzer
+                    Timer::after_millis(duration * 9 / 10);
+                    buzzer_cfg.compare_a = 0;
+                    buzzer.set_config(&buzzer_cfg); // stop buzzer
+                    Timer::after_millis(duration / 10);
+                }
+                None => {
+                    // TODO: Just wait the whole duration.
+                    Timer::after_millis(duration).await;
+                }
+            };
+        }
     }
 }
