@@ -47,7 +47,7 @@ async fn main(_spawner: Spawner) {
     // TODO: Configure the PWM pin.
     let mut buzzer_cfg: ConfigPwm = Default::default();
     buzzer_cfg.divider = PWM_DIV.to_fixed();
-    let mut buzzer = Pwm::new_output_a(peripherals.PWM_SLICE6, peripherals.PIN_28, buzzer_cfg.clone());
+    let mut buzzer = Pwm::new_output_a(peripherals.PWM_SLICE6, peripherals.PIN_15, buzzer_cfg.clone());
 
     loop {
         for (note, mut length) in IMPERIAL_MARCH {
