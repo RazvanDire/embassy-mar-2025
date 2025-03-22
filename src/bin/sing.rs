@@ -10,6 +10,7 @@ use embassy_executor::Spawner;
 use embassy_mar_2025::music::{Note, OCTAVE};
 use embassy_rp::pwm::{self, Pwm};
 use embassy_time::{Duration, Timer};
+use embedded_graphics::pixelcolor::raw::LittleEndian;
 use fixed::traits::ToFixed;
 
 // PWM config
@@ -52,7 +53,10 @@ async fn main(_spawner: Spawner) {
         for (note, mut length) in OCTAVE {
             // TODO: Compute the note's duration based on
             // the length variable.
-            let duration = WHOLE_NOTE / length.unsigned_abs() as u64;
+            let mut duration = WHOLE_NOTE / length.unsigned_abs() as u64;
+            if length < 0 {
+                duration = duration * 3 / 2;
+            }
 
             match note {
                 Some(note) => {
@@ -65,10 +69,10 @@ async fn main(_spawner: Spawner) {
                     buzzer_cfg.top = top as u16;
                     buzzer_cfg.compare_a = buzzer_cfg.top / 2;
                     buzzer.set_config(&buzzer_cfg); // start buzzer
-                    Timer::after_millis(duration * 9 / 10);
+                    Timer::after_millis(duration * 9 / 10).await;
                     buzzer_cfg.compare_a = 0;
                     buzzer.set_config(&buzzer_cfg); // stop buzzer
-                    Timer::after_millis(duration / 10);
+                    Timer::after_millis(duration / 10).await;
                 }
                 None => {
                     // TODO: Just wait the whole duration.
