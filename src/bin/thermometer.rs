@@ -19,6 +19,7 @@ use {defmt_rtt as _, panic_probe as _};
 // Use the logging macros provided by defmt.
 #[allow(unused)]
 use defmt::*;
+use bmp280::i2c::BMP280;
 
 embassy_rp::bind_interrupts!(struct Irqs {
     // Do not forget to bind the I2C peripheral interrupt to its handler
@@ -69,6 +70,20 @@ async fn main(_spawner: Spawner) {
     pwm_green.set_config(&config_green);
     pwm_blue.set_config(&config_blue);
 
+    embassy_rp::bind_interrupts!(struct Irqs {
+        // Do not forget to bind the I2C peripheral interrupt to its handler
+        I2C0_IRQ => embassy_rp::i2c::InterruptHandler<embassy_rp::peripherals::I2C0>;
+    });
+
+    let bus = I2c::new_async(
+            peripherals.I2C0,
+            peripherals.PIN_21,
+            peripherals.PIN_20,
+            Irqs, Default::default());
+    let mut bmp = BMP280::new(bus).unwrap();
+    let control: Control = Control { osrs_t: bmp280::Oversampling::x1, osrs_p: bmp280::Oversampling::x1, mode: bmp280::PowerMode::Forced};
+    bmp.set_control(control).await;
+
     let mut asc = true;
     let step = config_red.top / 37000;
     loop {
@@ -87,7 +102,7 @@ async fn main(_spawner: Spawner) {
                 pwm_red.set_config(&config_red);
                 pwm_blue.set_config(&config_blue);
 
-                Timer::after_secs(2).await;
+                Timer::after_secs(1).await;
             }
         } else {
             config_red.compare_a -= step;
@@ -104,8 +119,13 @@ async fn main(_spawner: Spawner) {
                 pwm_red.set_config(&config_red);
                 pwm_blue.set_config(&config_blue);
 
-                Timer::after_secs(2).await;
+                Timer::after_secs(1).await;
             }
         }
+
+        Timer::after_nanos(50).await;
+
+        info!("Temperature: {} - Pressure: {}", bmp.temp().await, bmp.pressure().await);
+        bmp.set_control(control).await;
     }
 }

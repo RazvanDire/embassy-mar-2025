@@ -206,14 +206,3 @@ pub const IMPERIAL_MARCH: [(Option<Note>, i8); 86] = [
     (Some(Note::C5), 16),
     (Some(Note::A4), 2),
 ];
-
-pub const : [(Option<Note>, i8); 8] = [
-    (Some(Note::C4), 4), // Do
-    (Some(Note::D4), 4), // Re
-    (Some(Note::E4), 4), // Mi
-    (Some(Note::F4), 4), // Fa
-    (Some(Note::G4), 4), // Sol
-    (Some(Note::A4), 4), // La
-    (Some(Note::B4), 4), // Si
-    (Some(Note::C5), 4), // Do
-];
