@@ -47,10 +47,10 @@ async fn main(_spawner: Spawner) {
     // TODO: Configure the PWM pin.
     let mut buzzer_cfg: ConfigPwm = Default::default();
     buzzer_cfg.divider = PWM_DIV.to_fixed();
-    let mut buzzer = Pwm::new_output_a(peripherals.PWM_SLICE6, peripherals.PIN_15, buzzer_cfg.clone());
+    let mut buzzer = Pwm::new_output_b(peripherals.PWM_SLICE7, peripherals.PIN_15, buzzer_cfg.clone());
 
     loop {
-        for (note, mut length) in IMPERIAL_MARCH {
+        for (note, length) in IMPERIAL_MARCH {
             // TODO: Compute the note's duration based on
             // the length variable.
             let mut duration = WHOLE_NOTE / length.unsigned_abs() as u64;
@@ -67,10 +67,10 @@ async fn main(_spawner: Spawner) {
                     // a 10% pause before playing the next note.
                     let top = CLOCK_FREQ / (note as u64 * PWM_DIV) - 1;
                     buzzer_cfg.top = top as u16;
-                    buzzer_cfg.compare_a = buzzer_cfg.top / 2;
+                    buzzer_cfg.compare_b = buzzer_cfg.top / 2;
                     buzzer.set_config(&buzzer_cfg); // start buzzer
                     Timer::after_millis(duration * 9 / 10).await;
-                    buzzer_cfg.compare_a = 0;
+                    buzzer_cfg.compare_b = 0;
                     buzzer.set_config(&buzzer_cfg); // stop buzzer
                     Timer::after_millis(duration / 10).await;
                 }
