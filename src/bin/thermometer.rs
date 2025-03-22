@@ -86,46 +86,66 @@ async fn main(_spawner: Spawner) {
 
     let mut asc = true;
     let step = config_red.top / 37000;
+
     loop {
-        if asc {
-            config_red.compare_a += step;
-            config_blue.compare_a -= step;
+        // if asc {
+        //     config_red.compare_a += step;
+        //     config_blue.compare_a -= step;
 
-            pwm_red.set_config(&config_red);
-            pwm_blue.set_config(&config_blue);
+        //     pwm_red.set_config(&config_red);
+        //     pwm_blue.set_config(&config_blue);
 
-            if config_blue.compare_a < step {
-                asc = false;
+        //     if config_blue.compare_a < step {
+        //         asc = false;
 
-                config_blue.compare_a = 0;
-                config_red.compare_a = config_red.top;
-                pwm_red.set_config(&config_red);
-                pwm_blue.set_config(&config_blue);
+        //         config_blue.compare_a = 0;
+        //         config_red.compare_a = config_red.top;
+        //         pwm_red.set_config(&config_red);
+        //         pwm_blue.set_config(&config_blue);
 
-                Timer::after_secs(1).await;
-            }
-        } else {
-            config_red.compare_a -= step;
-            config_blue.compare_a += step;
+        //         Timer::after_secs(1).await;
+        //     }
+        // } else {
+        //     config_red.compare_a -= step;
+        //     config_blue.compare_a += step;
 
-            pwm_red.set_config(&config_red);
-            pwm_blue.set_config(&config_blue);
+        //     pwm_red.set_config(&config_red);
+        //     pwm_blue.set_config(&config_blue);
 
-            if config_red.compare_a < step {
-                asc = true;
+        //     if config_red.compare_a < step {
+        //         asc = true;
 
-                config_red.compare_a = 0;
-                config_blue.compare_a = config_red.top;
-                pwm_red.set_config(&config_red);
-                pwm_blue.set_config(&config_blue);
+        //         config_red.compare_a = 0;
+        //         config_blue.compare_a = config_red.top;
+        //         pwm_red.set_config(&config_red);
+        //         pwm_blue.set_config(&config_blue);
 
-                Timer::after_secs(1).await;
-            }
+        //         Timer::after_secs(1).await;
+        //     }
+        // }
+
+        // Timer::after_nanos(50).await;
+        let temp = bmp.temp().await;
+        let press = bmp.pressure().await;
+
+        let mut inter = (temp - 27.1f64);
+
+        if (inter < 0f64) {
+            inter = 0.;
+        } else if inter > 1. {
+            inter = 1.;
         }
 
-        Timer::after_nanos(50).await;
+        let value = (inter * 37000f64) as u16;
 
-        info!("Temperature: {} - Pressure: {}", bmp.temp().await, bmp.pressure().await);
+        
+        config_blue.compare_a = value;
+        config_red.compare_a = config_blue.top - value;
+
+        pwm_red.set_config(&config_red);
+        pwm_blue.set_config(&config_blue);
+
+        info!("Temperature: {} - Pressure: {}, Value: {}", temp, press, value);
         bmp.set_control(control).await;
     }
 }
