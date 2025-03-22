@@ -206,3 +206,26 @@ pub const IMPERIAL_MARCH: [(Option<Note>, i8); 86] = [
     (Some(Note::C5), 16),
     (Some(Note::A4), 2),
 ];
+<<<<<<< HEAD
+=======
+
+pub const UNRAVEL_INTRO: [(Option<Note>, i8); 15] = [
+    (Some(Note::AS5), 8),
+    (Some(Note::C5), 4),
+    (Some(Note::AS5), 4),
+    (Some(Note::A5), 8),
+    (Some(Note::G4), 4),
+
+    (Some(Note::C5), 4),
+    (Some(Note::AS5), 4),
+    (Some(Note::A5), 4),
+    (Some(Note::G4), 4),
+
+    (Some(Note::G4), 8),
+    (Some(Note::F4), -4),
+    (Some(Note::DS4), 8),
+    (Some(Note::DS4), 8), // should be dotted eighth note
+    (Some(Note::F4), 4), // should be sixteenth note ligated with eighth note
+    (Some(Note::D4), 1)
+];
+>>>>>>> 10c0c8b0e387a40544b1bc61c97d3777c4007526
