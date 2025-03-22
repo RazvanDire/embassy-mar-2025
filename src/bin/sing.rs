@@ -7,7 +7,7 @@
 #![no_main]
 
 use embassy_executor::Spawner;
-use embassy_mar_2025::music::{Note, OCTAVE};
+use embassy_mar_2025::music::{Note, IMPERIAL_MARCH, OCTAVE};
 use embassy_rp::pwm::{self, Pwm};
 use embassy_time::{Duration, Timer};
 use embedded_graphics::pixelcolor::raw::LittleEndian;
@@ -34,7 +34,7 @@ use defmt::*;
 async fn main(_spawner: Spawner) {
     // Get a handle to the RP's peripherals.
     /// Beats per minute.
-    const TEMPO: u64 = 100;
+    const TEMPO: u64 = 120; // originally 100
     /// A whole note duration in milliseconds.
     const WHOLE_NOTE: u64 = 4 * (60_000 / TEMPO);
     /// The microcontroller clock frequency
@@ -50,7 +50,7 @@ async fn main(_spawner: Spawner) {
     let mut buzzer = Pwm::new_output_a(peripherals.PWM_SLICE6, peripherals.PIN_28, buzzer_cfg.clone());
 
     loop {
-        for (note, mut length) in OCTAVE {
+        for (note, mut length) in IMPERIAL_MARCH {
             // TODO: Compute the note's duration based on
             // the length variable.
             let mut duration = WHOLE_NOTE / length.unsigned_abs() as u64;
