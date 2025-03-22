@@ -10,6 +10,8 @@ use embassy_executor::Spawner;
 use embassy_mar_2025::bmp280::{self, Control};
 use embassy_rp::i2c::I2c;
 use embassy_time::Timer;
+use embassy_rp::{adc::InterruptHandler, config, pwm::{Config as ConfigPwm, SetDutyCycle}};
+use embassy_rp::pwm::Pwm;
 // Use the `panic_probe` crate to provided the panic handler and the 
 // `defmt_rtt` to import the runtime for defmt, to be able to use
 // the print macros.
@@ -25,8 +27,85 @@ embassy_rp::bind_interrupts!(struct Irqs {
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
     // Get a handle to the RP's peripherals.
-    let _p = embassy_rp::init(Default::default());
+    let peripherals = embassy_rp::init(Default::default());
 
+    let mut config_red: ConfigPwm = Default::default();
+    config_red.top = 0x9088; // in HEX, equals 37000 in decimal
+    config_red.compare_a = config_red.top;
+
+    // GREEN
+    let mut config_green: ConfigPwm = Default::default();
+    config_green.top = 0x9088;
+    config_green.compare_a = config_green.top;
+
+    // BLUE
+    let mut config_blue: ConfigPwm = Default::default();
+    config_blue.top = 0x9088;
+    config_blue.compare_a = config_blue.top;
+
+    // RED
+    let mut pwm_red = Pwm::new_output_a(
+        peripherals.PWM_SLICE3,
+        peripherals.PIN_6,
+        config_red.clone()
+    );
+
+    // GREEN
+    let mut pwm_green = Pwm::new_output_a(
+        peripherals.PWM_SLICE4,
+        peripherals.PIN_8,
+        config_green.clone()
+    );
+
+    // BLUE
+    let mut pwm_blue = Pwm::new_output_a(
+        peripherals.PWM_SLICE5,
+        peripherals.PIN_10,
+        config_blue.clone()
+    );
+
+    config_red.compare_a = 0;
+    pwm_red.set_config(&config_red);
+    pwm_green.set_config(&config_green);
+    pwm_blue.set_config(&config_blue);
+
+    let mut asc = true;
+    let step = config_red.top / 37000;
     loop {
+        if asc {
+            config_red.compare_a += step;
+            config_blue.compare_a -= step;
+
+            pwm_red.set_config(&config_red);
+            pwm_blue.set_config(&config_blue);
+
+            if config_blue.compare_a < step {
+                asc = false;
+
+                config_blue.compare_a = 0;
+                config_red.compare_a = config_red.top;
+                pwm_red.set_config(&config_red);
+                pwm_blue.set_config(&config_blue);
+
+                Timer::after_secs(2).await;
+            }
+        } else {
+            config_red.compare_a -= step;
+            config_blue.compare_a += step;
+
+            pwm_red.set_config(&config_red);
+            pwm_blue.set_config(&config_blue);
+
+            if config_red.compare_a < step {
+                asc = true;
+
+                config_red.compare_a = 0;
+                config_blue.compare_a = config_red.top;
+                pwm_red.set_config(&config_red);
+                pwm_blue.set_config(&config_blue);
+
+                Timer::after_secs(2).await;
+            }
+        }
     }
 }
